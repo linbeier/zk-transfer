@@ -18,6 +18,7 @@ class Test():
     def __init__(self, contract_source="zk_transfer.sol", key_file="allkeys.json",
                  zk_params_dir="librustzk", skip_zk=False):
         # setup w3 and accounts
+
         datadir = os.getenv('DATADIR')
         self.w3 = Web3(Web3.IPCProvider(datadir + '/gethdata/geth.ipc'))
         # self.w3 = Web3(Web3.IPCProvider(
@@ -101,6 +102,7 @@ class Test():
             commit_index, friends_addrs, notes, self.passphrase, self.threshold, self.new_account_index)
 
         logs = self.s.contract.events.PreTransferTxEvent().processReceipt(receipt)
+
         print("test_send_pre_transfer_tx logs: \n{}\n".format(logs[0].args))
         pre_transfer_index = logs[0].args.pre_transfer_index
         print("pre-transfer content: \n{}\n".format(self.s.get_pre_transfer_tx(pre_transfer_index)))
@@ -110,6 +112,13 @@ class Test():
         return pre_transfer_index, invitations
 
     def test_receive_invitations(self, invitations):
+        # for index in self.friends_indexes:
+        #     for invitation in invitations:
+        #         pubkey, note = self.s.try_receive_invitation(invitation, index)
+        #         if pubkey != self.keys[index]["public_key"]:
+        #             continue
+        #         str.append("account #{} received invitation:'{}'\n".format(index, note))
+        #         print("account #{} received invitation:'{}'\n".format(index, note))
         for index in self.friends_indexes:
             for invitation in invitations:
                 pubkey, note = self.s.try_receive_invitation(invitation, index)
@@ -158,7 +167,7 @@ class Test():
                 raise Exception("path proof verification failed\n")
             else:
                 print("path proof #{} verified".format(t + 1))
-
+        str.append("all path proofs verified\n")
         print("all path proofs verified\n")
 
     @staticmethod
@@ -176,6 +185,7 @@ class Test():
             return obj
 
     def test_send_preparation_txs(self, pre_transfer_index, verification_logs):
+
         friends_addrs = [self.w3.eth.accounts[index]
                          for index in self.friends_indexes]
         for friend_index, vlog in verification_logs.items():
@@ -184,6 +194,9 @@ class Test():
                 friends_addrs, self.friends_indexes.index(friend_index),
                 self.passphrase, self.threshold, self.new_account_index
             )
+            str.append("preparation-tx for friend #{} sent".format(friend_index))
+            str.append("current verified friends(shuffled_indexes): \n{}\n".format(
+                self.s.get_pre_transfer_verified_list(pre_transfer_index)))
             print("preparation-tx for friend #{} sent".format(friend_index))
             print("current verified friends(shuffled_indexes): \n{}\n".format(
                 self.s.get_pre_transfer_verified_list(pre_transfer_index)))
@@ -247,8 +260,8 @@ class Test():
         print("=========== all tests passed ============")
 
 
-global t
 t = Test(skip_zk=False)
+str = []
 
 
 @app.route('/for_test_send_commit_tx/', methods=['POST', 'GET'])
@@ -300,7 +313,13 @@ def for_test_send_pre_transfer_tx():
         pre_transfer_index)["commit_index"])
     t.test_receive_invitations(invitations)
     data = {'index': pre_transfer_index}
-
+    n = 0
+    global str
+    for index_str in str:
+        str0 = 'str%d' % n
+        n += 1
+        data[str0] = index_str
+    str = []
     return jsonify(data)
 
 
@@ -308,18 +327,17 @@ def for_test_send_pre_transfer_tx():
 def for_test_send_verification_tx():
     global verification_logs
     verification_logs = {}
-    friend_index = []
     pre_transfer_index = int(request.args.get('pre_transfer_index'))
     friend_indexnum = int(request.args.get('friend_index'))
+    t.friends_indexes = []
     if (friend_indexnum // 10) != 0:
-        friend_index.append(friend_indexnum // 10)
-        friend_index.append(friend_indexnum % 10)
+        t.friends_indexes.append(friend_indexnum // 10)
+        t.friends_indexes.append(friend_indexnum % 10)
     else:
         if (friend_indexnum % 10) != 0:
-            friend_index.append(friend_indexnum % 10)
+            t.friends_indexes.append(friend_indexnum % 10)
 
-
-    for index in friend_index:
+    for index in t.friends_indexes:
         receipt = t.s.send_verification_tx(pre_transfer_index, index)
         logs = t.s.contract.events.VerificationTxEvent().processReceipt(receipt)
         verification_logs[index] = logs[0].args
@@ -331,16 +349,23 @@ def for_test_send_verification_tx():
         verification_logs, pre_transfer_index)
     t.verify_path_proofs(
         [proof for _, proof in nonce_and_proofs.values()])
-    log1 = str(verification_logs[1].verification_receipt)
-    log2 = str(verification_logs[2].verification_receipt)
-    return jsonify({'log1': log1, 'log2': log2})
+
+    return jsonify({'result': 'send verification ok'})
 
 
 @app.route('/for_test_send_preparation_txs/', methods=['GET', 'POST'])
 def for_test_send_preparation_txs():
     pre_transfer_index = int(request.args.get('pre_transfer_index'))
     t.test_send_preparation_txs(pre_transfer_index, verification_logs)
-    return jsonify({'result': 'send ok!'})
+    data = {}
+    n = 0
+    global str
+    for index in str:
+        str0 = 'str%d' % (n)
+        n += 1
+        data[str0] = index
+    str = []
+    return jsonify({'result': 'send ok!'}, data)
 
 
 @app.route('/for_test_send_transfer_tx/', methods=['GET', 'POST'])
