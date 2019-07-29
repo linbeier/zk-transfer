@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="{{ url_for('static', filename="jquery-3.4.1.min.js")}}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename="demo.js")}}"></script>
+    <!-- <script type=text/javascript>
+		var $SCRIPT_ROOT = {{request.script_root|tojson|safe}};
+	</script> -->
+	<link rel="shortcut icon" href="#" />
+    <script>
+        var commit_index0;
+    	function test1(){
+    		var data={
+                old_addr : "0xbe949e848c145e4f00e90512c9e8ad4081074dbb",
+                fri_addrs1 : "0x7c7ce408fbe126e31877870777e5866090831597",
+                fri_addrs2 : "0x13a58ed55a668e33e8dd03d92b5e2033ce1c7ecc",
+                fri_addrs3 : "0xefd5384e95d1961c5b5296a35d9b77a7d758d405",
+                old_pass : "1111",
+                threshold : 2,
+                comment : "this is a commit tx",
+
+            };
+        $.ajax({
+            type:'GET',
+            url:'{{url_for("for_test_send_commit_tx")}}',
+            data:data,
+            dataType:'json',//希望服务器返回json格式的数据
+            success:function(data){
+                alert(JSON.stringify(data));
+                alert(data['comment_index']);
+                commit_index0 = data['comment_index'];
+            }
+        });
+    	}
+    </script>
+<script>
+        var pre_transfer_index ;
+    	function test2(){
+    		var data={
+    		    fri_addrs1 : "0x7c7ce408fbe126e31877870777e5866090831597",
+                fri_addrs2 : "0x13a58ed55a668e33e8dd03d92b5e2033ce1c7ecc",
+                fri_addrs3 : "0xefd5384e95d1961c5b5296a35d9b77a7d758d405",
+                new_pass : "aaaa",
+                threshold : 2,
+                new_account : "0xe418dbbb73b84c8a0e59861dff23eaa44c0258bb",
+    		    commit_index : commit_index0
+            };
+    		console.log(data);
+        $.ajax({
+            type:'GET',
+            url:'{{url_for("for_test_send_pre_transfer_tx")}}',
+            data:data,
+            dataType:'json',//希望服务器返回json格式的数据
+            success:function(data){
+                alert(JSON.stringify(data));
+                alert(data['index']);
+                pre_transfer_index = data['index'];
+            }
+        });
+    	}
+    </script>
+<script>
+    	function test3(){
+    		var data={
+    		    fri_addrs1 : "0x7c7ce408fbe126e31877870777e5866090831597",
+                fri_addrs2 : "0x13a58ed55a668e33e8dd03d92b5e2033ce1c7ecc",
+                fri_addrs3 : "0xefd5384e95d1961c5b5296a35d9b77a7d758d405",
+                new_pass : "aaaa",
+                threshold : 2,
+                friend_index : 12,
+                new_account : "0xe418dbbb73b84c8a0e59861dff23eaa44c0258bb",
+    		    pre_transfer_index : pre_transfer_index
+            };
+    		console.log(data);
+        $.ajax({
+            type:'GET',
+            url:'{{url_for("for_test_send_verification_tx")}}',
+            data:data,
+            dataType:'json',//希望服务器返回json格式的数据
+            success:function(data){
+                alert(JSON.stringify(data));
+                alert(data['index']);
+
+            }
+        });
+    	}
+    </script>
+    <script>
+    	function test4(){
+    		var data={
+    		    fri_addrs1 : "0x7c7ce408fbe126e31877870777e5866090831597",
+                fri_addrs2 : "0x13a58ed55a668e33e8dd03d92b5e2033ce1c7ecc",
+                fri_addrs3 : "0xefd5384e95d1961c5b5296a35d9b77a7d758d405",
+                new_pass : "aaaa",
+                threshold : 2,
+                new_account : "0xe418dbbb73b84c8a0e59861dff23eaa44c0258bb",
+    		    pre_transfer_index : pre_transfer_index
+            };
+    		console.log(data);
+        $.ajax({
+            type:'GET',
+            url:'{{url_for("for_test_send_preparation_txs")}}',
+            data:data,
+            dataType:'json',//希望服务器返回json格式的数据
+            success:function(data){
+                alert(JSON.stringify(data));
+                alert(data['result']);
+
+            }
+        });
+    	}
+    </script>
+    <script>
+    	function test5(){
+    		var data={
+    		    fri_addrs1 : "0x7c7ce408fbe126e31877870777e5866090831597",
+                fri_addrs2 : "0x13a58ed55a668e33e8dd03d92b5e2033ce1c7ecc",
+                fri_addrs3 : "0xefd5384e95d1961c5b5296a35d9b77a7d758d405",
+                new_pass : "aaaa",
+                threshold : 2,
+                new_account : "0xe418dbbb73b84c8a0e59861dff23eaa44c0258bb",
+    		    pre_transfer_index : pre_transfer_index
+            };
+    		console.log(data);
+        $.ajax({
+            type:'GET',
+            url:'{{url_for("for_test_send_transfer_tx")}}',
+            data:data,
+            dataType:'json',//希望服务器返回json格式的数据
+            success:function(data){
+                alert(JSON.stringify(data));
+                alert(data['result']);
+
+            }
+        });
+    	}
+    </script>
+</head>
+<body>
+ <button id="test1" onclick="test1()">test1!</button>
+  <button id="test2" onclick="test2()">test2!</button>
+   <button id="test3" onclick="test3()">test3!</button>
+    <button id="test4" onclick="test4()">test4!</button>
+     <button id="test5" onclick="test5()">test5!</button>
+<!-- <p>
+    <input type=text size=5 name=a> +
+    <input type=text size=5 name=b> =
+    <span id=result>?</span>
+</p>
+<p><input type="button" id="calculate" value="计算"></p> -->
+
+</body>
+</html>

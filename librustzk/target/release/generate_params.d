@@ -1,0 +1,1 @@
+/home/lxb/Desktop/zk-transfer-master/zk-transfer/zklib/librustzk/target/release/generate_params: /home/lxb/Desktop/zk-transfer-master/zk-transfer/zklib/librustzk/src/bin/generate_params.rs /home/lxb/Desktop/zk-transfer-master/zk-transfer/zklib/librustzk/src/lib.rs /home/lxb/Desktop/zk-transfer-master/zk-transfer/zklib/librustzk/src/zk.rs

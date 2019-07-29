@@ -1,0 +1,19 @@
+[package]
+name = "librustzk"
+version = "0.1.0"
+authors = ["Zhongze Liu <blackskygg@gmail.com>"]
+
+[dependencies]
+bellman = { git = 'https://github.com/zcash/librustzcash' }
+pairing = { git = 'https://github.com/zcash/librustzcash' }
+sapling-crypto = { git = 'https://github.com/zcash/librustzcash' }
+ff = { git = 'https://github.com/zcash/librustzcash' }
+rand = "0.4"
+rust-crypto = "^0.2"
+
+[lib]
+name = "rustzk"
+crate-type = ["dylib", "rlib"]
+
+[profile.test]
+opt-level = 3
