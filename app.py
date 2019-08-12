@@ -50,12 +50,17 @@ class Test():
         with open(key_file) as fh:
             self.keys = load(fh)
         self.addr2keys = {}
+        self.addr2num = {}
         for key in self.keys:
             key["address"] = Web3.toChecksumAddress(key["address"])
             self.addr2keys[key["address"]] = key
             self.w3.personal.unlockAccount(
                 key["address"], key["passphrase"], 0)
-
+        number = 0
+        for num in self.keys:
+            num['address'] = Web3.toChecksumAddress(num["address"])
+            self.addr2num[num['address']] = number
+            number += 1
     # init
     @staticmethod
     def compile_source_file(file_path):
@@ -282,7 +287,9 @@ def for_test_send_commit_tx():
     commit_index = logs[0].args.commit_index
     print("commit content: \n{}\n".format(
         t.s.get_commit_tx(commit_index)))
-    return jsonify({'comment_index': commit_index})
+    com_content = t.s.get_commit_tx(commit_index)
+    sender = com_content['sender']
+    return jsonify({'comment_index': commit_index, 'limit': t.limit, 'sender': sender})
 
 
 @app.route('/for_test_send_pre_transfer_tx/', methods=['POST', 'GET'])
@@ -306,21 +313,18 @@ def for_test_send_pre_transfer_tx():
     print("test_send_pre_transfer_tx logs: \n{}\n".format(logs[0].args))
     pre_transfer_index = logs[0].args.pre_transfer_index
     print("pre-transfer content: \n{}\n".format(t.s.get_pre_transfer_tx(pre_transfer_index)))
+    transfer = t.s.get_pre_transfer_tx(pre_transfer_index)
+    sender = transfer['sender']
+    commit_index = transfer['commit_index']
+    block_num = transfer['block_num']
 
     invitation_logs = t.s.contract.events.InvitationEvent().processReceipt(receipt)
     invitations = [log.args.invitation for log in invitation_logs]
     assert (commit_index == t.s.get_pre_transfer_tx(
         pre_transfer_index)["commit_index"])
     t.test_receive_invitations(invitations)
-    data = {'index': pre_transfer_index}
-    n = 0
-    global str
-    for index_str in str:
-        str0 = 'str%d' % n
-        n += 1
-        data[str0] = index_str
-    str = []
-    return jsonify(data)
+
+    return jsonify({'sender': sender, 'commit_index': commit_index, 'block_num': block_num})
 
 
 @app.route('/for_test_send_verification_tx/', methods=['POST', 'GET'])
@@ -330,12 +334,12 @@ def for_test_send_verification_tx():
     pre_transfer_index = int(request.args.get('pre_transfer_index'))
     friend_indexnum = int(request.args.get('friend_index'))
     t.friends_indexes = []
-    if (friend_indexnum // 10) != 0:
-        t.friends_indexes.append(friend_indexnum // 10)
-        t.friends_indexes.append(friend_indexnum % 10)
-    else:
-        if (friend_indexnum % 10) != 0:
-            t.friends_indexes.append(friend_indexnum % 10)
+    # if (friend_indexnum // 10) != 0:
+    #     t.friends_indexes.append(friend_indexnum // 10)
+    #     t.friends_indexes.append(friend_indexnum % 10)
+    # else:
+    #     if (friend_indexnum % 10) != 0:
+    #         t.friends_indexes.append(friend_indexnum % 10)
 
     for index in t.friends_indexes:
         receipt = t.s.send_verification_tx(pre_transfer_index, index)
@@ -343,6 +347,7 @@ def for_test_send_verification_tx():
         verification_logs[index] = logs[0].args
         verification_index = logs[0].args.verification_index
         print("send verification logs #{}: \n{}\n".format(index, logs))
+        # verif = logs[0].args.
         print("verification #{} content: \n{}\n".format(
             index, t.s.get_verification_tx(verification_index)))
     nonce_and_proofs = t.test_collect_nonce_and_proofs(
