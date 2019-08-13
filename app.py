@@ -61,6 +61,7 @@ class Test():
             num['address'] = Web3.toChecksumAddress(num["address"])
             self.addr2num[num['address']] = number
             number += 1
+
     # init
     @staticmethod
     def compile_source_file(file_path):
@@ -324,7 +325,7 @@ def for_test_send_pre_transfer_tx():
         pre_transfer_index)["commit_index"])
     t.test_receive_invitations(invitations)
 
-    return jsonify({'sender': sender, 'commit_index': commit_index, 'block_num': block_num})
+    return jsonify({'sender': sender, 'index': commit_index, 'block_num': block_num})
 
 
 @app.route('/for_test_send_verification_tx/', methods=['POST', 'GET'])
@@ -332,30 +333,43 @@ def for_test_send_verification_tx():
     global verification_logs
     verification_logs = {}
     pre_transfer_index = int(request.args.get('pre_transfer_index'))
-    friend_indexnum = int(request.args.get('friend_index'))
-    t.friends_indexes = []
-    # if (friend_indexnum // 10) != 0:
-    #     t.friends_indexes.append(friend_indexnum // 10)
-    #     t.friends_indexes.append(friend_indexnum % 10)
-    # else:
-    #     if (friend_indexnum % 10) != 0:
-    #         t.friends_indexes.append(friend_indexnum % 10)
+    friends_addrs1 = request.args.get("fri_addrs1")
+    friends_addrs2 = request.args.get("fri_addrs2")
+    friends_addrs3 = request.args.get("fri_addrs3")
 
+    if friends_addrs1 is None or friends_addrs2 is None:
+        return jsonify({'result': 'not enough friends!'})
+    friends_addrs1 = Web3.toChecksumAddress(friends_addrs1)
+    friends_addrs2 = Web3.toChecksumAddress(friends_addrs2)
+    t.friends_indexes = []
+
+    t.friends_indexes.append(t.addr2num[friends_addrs1])
+    t.friends_indexes.append(t.addr2num[friends_addrs2])
+
+    blockHash = []
+    blockNum = []
+    address = []
     for index in t.friends_indexes:
         receipt = t.s.send_verification_tx(pre_transfer_index, index)
         logs = t.s.contract.events.VerificationTxEvent().processReceipt(receipt)
         verification_logs[index] = logs[0].args
         verification_index = logs[0].args.verification_index
         print("send verification logs #{}: \n{}\n".format(index, logs))
-        # verif = logs[0].args.
+        blockHash.append(logs[0].blockHash)
+        blockNum.append(logs[0].blockNumber)
+        address.append(logs[0].address)
+
         print("verification #{} content: \n{}\n".format(
             index, t.s.get_verification_tx(verification_index)))
     nonce_and_proofs = t.test_collect_nonce_and_proofs(
         verification_logs, pre_transfer_index)
     t.verify_path_proofs(
         [proof for _, proof in nonce_and_proofs.values()])
-
-    return jsonify({'result': 'send verification ok'})
+    blockHash[0] = blockHash[0].hex()
+    blockHash[1] = blockHash[1].hex()
+    return jsonify(
+        {'result': 'send verification ok', 'friend1_blockhash': blockHash[0], 'friend1_blocknum': blockNum[0],
+         'friend2_blockhash': blockHash[1], 'friend2_blocknum': blockNum[1]})
 
 
 @app.route('/for_test_send_preparation_txs/', methods=['GET', 'POST'])
